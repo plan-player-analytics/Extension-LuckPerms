@@ -45,6 +45,8 @@ import java.util.stream.Stream;
  * @author Rsl1122
  */
 @PluginInfo(name = "LuckPerms", iconName = "exclamation-triangle", iconFamily = Family.SOLID, color = Color.LIGHT_GREEN)
+@TabInfo(tab = "Permission Groups", iconName = "users-cog", elementOrder = {})
+@TabInfo(tab = "Metadata", iconName = "info-circle", elementOrder = {})
 public class LuckPermsExtension implements DataExtension {
 
     public LuckPermsExtension() {
