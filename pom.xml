@@ -6,7 +6,7 @@
 
     <groupId>com.djrapitops</groupId>
     <artifactId>Extension-LuckPerms</artifactId>
-    <version>4.4-R0.2</version>
+    <version>5.0-R0.1</version>
     <build>
         <plugins>
             <plugin>
@@ -62,9 +62,9 @@
 
         <!-- Plugin API Dependency -->
         <dependency> <!-- Maven Central -->
-            <groupId>me.lucko.luckperms</groupId>
-            <artifactId>luckperms-api</artifactId>
-            <version>4.4</version>
+            <groupId>net.luckperms</groupId>
+            <artifactId>api</artifactId>
+            <version>5.0</version>
             <scope>provided</scope>
         </dependency>
 

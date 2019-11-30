@@ -29,9 +29,12 @@ import com.djrapitops.plan.extension.icon.Color;
 import com.djrapitops.plan.extension.icon.Family;
 import com.djrapitops.plan.extension.icon.Icon;
 import com.djrapitops.plan.extension.table.Table;
-import me.lucko.luckperms.LuckPerms;
-import me.lucko.luckperms.api.*;
-import me.lucko.luckperms.api.caching.MetaData;
+import net.luckperms.api.LuckPerms;
+import net.luckperms.api.LuckPermsProvider;
+import net.luckperms.api.cacheddata.CachedMetaData;
+import net.luckperms.api.model.group.Group;
+import net.luckperms.api.model.user.User;
+import net.luckperms.api.track.Track;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -52,12 +55,16 @@ public class LuckPermsExtension implements DataExtension {
     public LuckPermsExtension() {
     }
 
-    public LuckPermsApi getAPI() {
-        return LuckPerms.getApiSafe().orElseThrow(NotReadyException::new);
+    public LuckPerms getAPI() {
+        try {
+            return LuckPermsProvider.get();
+        } catch (IllegalStateException e) {
+            throw new NotReadyException();
+        }
     }
 
     public User getUser(UUID playerUUID) {
-        return getAPI().getUserSafe(playerUUID).orElseThrow(NotReadyException::new);
+        return Optional.ofNullable(getAPI().getUserManager().getUser(playerUUID)).orElseThrow(NotReadyException::new);
     }
 
     @GroupProvider(
@@ -81,9 +88,9 @@ public class LuckPermsExtension implements DataExtension {
     }
 
     private Stream<String> getGroupNames(UUID playerUUID) {
-        return getUser(playerUUID).getPermissions().stream()
-                .filter(Node::isGroupNode)
-                .map(Node::getGroupName);
+        return getUser(playerUUID).getNodes().stream()
+                .filter(node -> node.getKey().startsWith("group."))
+                .map(node -> node.getKey().substring(6));
     }
 
     @TableProvider(
@@ -91,7 +98,7 @@ public class LuckPermsExtension implements DataExtension {
     )
     @Tab("Permission Groups")
     public Table tracks(UUID playerUUID) {
-        Set<Track> tracks = getAPI().getTracks();
+        Set<Track> tracks = getAPI().getTrackManager().getLoadedTracks();
         Set<String> groups = getGroupNames(playerUUID).collect(Collectors.toSet());
 
         Table.Factory table = Table.builder()
@@ -136,20 +143,21 @@ public class LuckPermsExtension implements DataExtension {
     @TableProvider(tableColor = Color.BLUE)
     @Tab("Metadata")
     public Table metaTable(UUID playerUUID) {
-        Map<String, String> meta = getMetaData(playerUUID).getMeta();
+        Map<String, List<String>> meta = getMetaData(playerUUID).getMeta();
         if (meta.isEmpty()) throw new NotReadyException();
 
         Table.Factory table = Table.builder()
                 .columnOne("Meta", Icon.called("info-circle").build())
                 .columnTwo("Value", Icon.called("file-alt").build());
 
-        meta.forEach((key, value) -> table.addRow(key, value));
+        meta.forEach((key, value) -> table.addRow(key, value.toString()));
 
         return table.build();
     }
 
-    private MetaData getMetaData(UUID playerUUID) {
-        return getUser(playerUUID).getCachedData().getMetaData(Contexts.allowAll());
+    private CachedMetaData getMetaData(UUID playerUUID) {
+        return getUser(playerUUID).getCachedData()
+                .getMetaData(getAPI().getContextManager().getStaticQueryOptions());
     }
 
     @StringProvider(
@@ -160,10 +168,14 @@ public class LuckPermsExtension implements DataExtension {
             iconColor = Color.LIGHT_GREEN
     )
     public String weight(com.djrapitops.plan.extension.Group permissionGroup) {
-        Group group = getAPI().getGroupSafe(permissionGroup.getGroupName()).orElseThrow(NotReadyException::new);
+        Group group = getGroup(permissionGroup.getGroupName());
 
         OptionalInt weight = group.getWeight();
         return weight.isPresent() ? Integer.toString(weight.getAsInt()) : "None";
+    }
+
+    private Group getGroup(String groupName) {
+        return Optional.ofNullable(getAPI().getGroupManager().getGroup(groupName)).orElseThrow(NotReadyException::new);
     }
 
     @TableProvider(
@@ -171,13 +183,12 @@ public class LuckPermsExtension implements DataExtension {
     )
     @Tab("Permission Groups")
     public Table permissions(com.djrapitops.plan.extension.Group permissionGroup) {
-        Group group = getAPI().getGroupSafe(permissionGroup.getGroupName()).orElseThrow(NotReadyException::new);
+        Group group = getGroup(permissionGroup.getGroupName());
 
         Table.Factory table = Table.builder()
                 .columnOne("Permission", Icon.called("object-group").build());
 
-        group.getPermissions()
-                .forEach(permission -> table.addRow(permission.getPermission()));
+        group.getNodes().forEach(permission -> table.addRow(permission.getKey()));
 
         return table.build();
     }
@@ -187,13 +198,13 @@ public class LuckPermsExtension implements DataExtension {
     )
     @Tab("Permission Groups")
     public Table tracks() {
-        Set<Track> tracks = getAPI().getTracks();
+        Set<Track> tracks = getAPI().getTrackManager().getLoadedTracks();
 
         Table.Factory table = Table.builder()
                 .columnOne("Track", Icon.called("ellipsis-h").build())
                 .columnTwo("Size", Icon.called("list").build());
 
-        tracks.forEach(track -> table.addRow(track.getName(), track.getSize()));
+        tracks.forEach(track -> table.addRow(track.getName(), track.getGroups().size()));
 
         return table.build();
     }
