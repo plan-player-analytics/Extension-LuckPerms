@@ -6,7 +6,7 @@
 
     <groupId>com.djrapitops</groupId>
     <artifactId>Extension-LuckPerms</artifactId>
-    <version>5.0-R0.1</version>
+    <version>5.0-R0.2</version>
     <build>
         <plugins>
             <plugin>

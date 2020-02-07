@@ -35,7 +35,7 @@ public class LuckPermsExtensionFactory {
 
     private boolean isAvailable() {
         try {
-            Class.forName("me.lucko.luckperms.LuckPerms");
+            Class.forName("net.luckperms.api.LuckPerms");
             return true;
         } catch (ClassNotFoundException e) {
             return false;
