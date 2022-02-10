@@ -22,6 +22,7 @@
 */
 package com.djrapitops.extension;
 
+import com.djrapitops.plan.extension.Caller;
 import com.djrapitops.plan.extension.DataExtension;
 import com.djrapitops.plan.extension.NotReadyException;
 import com.djrapitops.plan.extension.annotation.*;
@@ -29,13 +30,18 @@ import com.djrapitops.plan.extension.icon.Color;
 import com.djrapitops.plan.extension.icon.Family;
 import com.djrapitops.plan.extension.icon.Icon;
 import com.djrapitops.plan.extension.table.Table;
+import com.djrapitops.plan.query.QueryService;
 import net.luckperms.api.LuckPerms;
 import net.luckperms.api.LuckPermsProvider;
 import net.luckperms.api.cacheddata.CachedMetaData;
+import net.luckperms.api.event.EventBus;
+import net.luckperms.api.event.group.GroupDeleteEvent;
+import net.luckperms.api.event.player.PlayerDataSaveEvent;
 import net.luckperms.api.model.group.Group;
 import net.luckperms.api.model.user.User;
 import net.luckperms.api.track.Track;
 
+import java.sql.ResultSet;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -52,10 +58,43 @@ import java.util.stream.Stream;
 @TabInfo(tab = "Metadata", iconName = "info-circle", elementOrder = {})
 public class LuckPermsExtension implements DataExtension {
 
-    public LuckPermsExtension() {
+    public static void registerListeners(Caller caller) {
+        EventBus eventBus = getAPI().getEventBus();
+
+        eventBus.subscribe(PlayerDataSaveEvent.class, event -> caller.updatePlayerData(event.getUniqueId(), event.getUsername()));
+        eventBus.subscribe(GroupDeleteEvent.class, event -> updatePlayersInGroup(event, caller));
     }
 
-    public LuckPerms getAPI() {
+    private static void updatePlayersInGroup(GroupDeleteEvent event, Caller caller) {
+        String groupName = event.getGroupName();
+
+        String sql = "SELECT uuid " +
+                "FROM plan_extension_groups g " +
+                "JOIN plan_extension_providers pr on pr.id=g.provider_id" +
+                "JOIN plan_extension_plugins pl on pl.id=pr.plugin_id" +
+                "WHERE g.group=? " +
+                "AND pl.name=? " +
+                "AND pl.server_uuid=?";
+
+        QueryService.getInstance().query(sql, statement -> {
+                    statement.setString(1, groupName);
+                    statement.setString(2, "LuckPerms");
+                    statement.setString(3, QueryService.getInstance().getServerUUID()
+                            .map(UUID::toString)
+                            .orElseThrow(NotReadyException::new));
+
+                    try (ResultSet set = statement.executeQuery()) {
+                        Set<UUID> playerUUIDsInGroup = new HashSet<>();
+                        while (set.next()) {
+                            playerUUIDsInGroup.add(UUID.fromString(set.getString("uuid")));
+                        }
+                        return playerUUIDsInGroup;
+                    }
+                })
+                .forEach(uuid -> caller.updatePlayerData(uuid, null));
+    }
+
+    public static LuckPerms getAPI() {
         try {
             return LuckPermsProvider.get();
         } catch (IllegalStateException e) {

@@ -22,6 +22,7 @@
 */
 package com.djrapitops.extension;
 
+import com.djrapitops.plan.extension.Caller;
 import com.djrapitops.plan.extension.DataExtension;
 
 import java.util.Optional;
@@ -47,5 +48,9 @@ public class LuckPermsExtensionFactory {
             return Optional.of(new LuckPermsExtension());
         }
         return Optional.empty();
+    }
+
+    public void registerListeners(Caller caller) {
+        LuckPermsExtension.registerListeners(caller);
     }
 }
