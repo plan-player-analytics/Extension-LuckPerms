@@ -113,7 +113,11 @@ public class LuckPermsExtension implements DataExtension {
     )
     @Tab("Permission Groups")
     public String[] primaryGroup(UUID playerUUID) {
-        return new String[]{getUser(playerUUID).getPrimaryGroup()};
+        try {
+            return new String[]{getUser(playerUUID).getPrimaryGroup()};
+        } catch (NullPointerException notCachedYet) {
+            throw new NotReadyException();
+        }
     }
 
     @GroupProvider(
