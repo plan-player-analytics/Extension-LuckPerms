@@ -70,8 +70,8 @@ public class LuckPermsExtension implements DataExtension {
 
         String sql = "SELECT uuid " +
                 "FROM plan_extension_groups g " +
-                "JOIN plan_extension_providers pr on pr.id=g.provider_id" +
-                "JOIN plan_extension_plugins pl on pl.id=pr.plugin_id" +
+                "JOIN plan_extension_providers pr on pr.id=g.provider_id " +
+                "JOIN plan_extension_plugins pl on pl.id=pr.plugin_id " +
                 "WHERE g.group=? " +
                 "AND pl.name=? " +
                 "AND pl.server_uuid=?";
