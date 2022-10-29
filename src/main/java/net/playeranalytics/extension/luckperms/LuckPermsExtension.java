@@ -72,7 +72,7 @@ public class LuckPermsExtension implements DataExtension {
                 "FROM plan_extension_groups g " +
                 "JOIN plan_extension_providers pr on pr.id=g.provider_id " +
                 "JOIN plan_extension_plugins pl on pl.id=pr.plugin_id " +
-                "WHERE g.group=? " +
+                "WHERE g.group_name=? " +
                 "AND pl.name=? " +
                 "AND pl.server_uuid=?";
 
