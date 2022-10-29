@@ -6,7 +6,7 @@
 
     <groupId>net.playeranalytics</groupId>
     <artifactId>Extension-LuckPerms</artifactId>
-    <version>5.0-R1.5</version>
+    <version>5.0-R1.6</version>
     <build>
         <plugins>
             <plugin>
@@ -49,13 +49,17 @@
             <id>plan-repo</id>
             <url>https://repo.playeranalytics.net/releases</url>
         </repository>
+        <repository>
+            <id>jitpack</id>
+            <url>https://jitpack.io</url>
+        </repository>
     </repositories>
 
     <dependencies>
         <dependency> <!-- Plan API -->
-            <groupId>com.djrapitops</groupId>
-            <artifactId>plan-api</artifactId>
-            <version>5.2-R0.1</version>
+            <groupId>com.github.plan-player-analytics</groupId>
+            <artifactId>Plan</artifactId>
+            <version>96a14a24f5</version> <!-- TODO: switch to a tag -->
             <scope>provided</scope>
         </dependency>
 
