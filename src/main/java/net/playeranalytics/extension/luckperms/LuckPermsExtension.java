@@ -22,6 +22,8 @@
 */
 package net.playeranalytics.extension.luckperms;
 
+import com.djrapitops.plan.component.Component;
+import com.djrapitops.plan.component.ComponentService;
 import com.djrapitops.plan.extension.Caller;
 import com.djrapitops.plan.extension.DataExtension;
 import com.djrapitops.plan.extension.NotReadyException;
@@ -72,7 +74,7 @@ public class LuckPermsExtension implements DataExtension {
                 "FROM plan_extension_groups g " +
                 "JOIN plan_extension_providers pr on pr.id=g.provider_id " +
                 "JOIN plan_extension_plugins pl on pl.id=pr.plugin_id " +
-                "WHERE g.group=? " +
+                "WHERE g.group_name=? " +
                 "AND pl.name=? " +
                 "AND pl.server_uuid=?";
 
@@ -159,7 +161,7 @@ public class LuckPermsExtension implements DataExtension {
         return table.build();
     }
 
-    @StringProvider(
+    @ComponentProvider(
             text = "Prefix",
             description = "Current user prefix",
             priority = 100,
@@ -167,11 +169,14 @@ public class LuckPermsExtension implements DataExtension {
             iconColor = Color.GREEN
     )
     @Tab("Metadata")
-    public String prefix(UUID playerUUID) {
-        return Optional.ofNullable(getMetaData(playerUUID).getPrefix()).orElse("None");
+    public Component prefix(UUID playerUUID) {
+        ComponentService service = ComponentService.getInstance();
+        return Optional.ofNullable(getMetaData(playerUUID).getPrefix())
+                .map(service::fromAutoDetermine)
+                .orElseGet(() -> service.fromLegacy("None"));
     }
 
-    @StringProvider(
+    @ComponentProvider(
             text = "Suffix",
             description = "Current user suffix",
             priority = 99,
@@ -179,8 +184,11 @@ public class LuckPermsExtension implements DataExtension {
             iconColor = Color.BLUE
     )
     @Tab("Metadata")
-    public String suffix(UUID playerUUID) {
-        return Optional.ofNullable(getMetaData(playerUUID).getSuffix()).orElse("None");
+    public Component suffix(UUID playerUUID) {
+        ComponentService service = ComponentService.getInstance();
+        return Optional.ofNullable(getMetaData(playerUUID).getSuffix())
+                .map(service::fromAutoDetermine)
+                .orElseGet(() -> service.fromLegacy("None"));
     }
 
     @TableProvider(tableColor = Color.BLUE)
